@@ -1,0 +1,10 @@
+# Rozwiązanie # 3
+pole_kola=function(promien){
+  return(pi*promien^2)
+}
+pole_kola(1)
+# Rozwiązanie # 4
+przeciwprostokatna=function(podstawa1, podstawa2){
+  return (sqrt(podstawa1^2+podstawa2^2))
+}
+przeciwprostokatna(3, 4)
