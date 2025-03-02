@@ -1,36 +1,38 @@
-install.packages(c("tm", "wordcloud", "RColorBrewer", "ggplot2"))
-library(tm)
+# install.packages(c("qdap", "wordcloud", "RColorBrewer"))
+library(qdap)
 library(wordcloud)
 library(RColorBrewer)
-library(ggplot2)
-text_2021 <- readLines(file.choose(), encoding = "UTF-8")
-text_2024 <- readLines(file.choose(), encoding = "UTF-8")
-tidy_text <- function(text) {
-  corpus <- Corpus(VectorSource(text))
-  corpus <- tm_map(corpus, content_transformer(tolower))
-  corpus <- tm_map(corpus, removePunctuation)
-  corpus <- tm_map(corpus, removeWords, stopwords("en"))  # Usunięcie stop-słów
-  return(corpus)
+przemowienie_2021 <- tolower(readLines(file.choose()))
+przemowienie_2024 <- tolower(readLines(file.choose()))
+przetworz_tekst <- function(text) {
+  text <- gsub("[[:punct:]]", "", text)  # Usuwanie interpunkcji
+  text <- gsub("\\d+", "", text)         # Usuwanie liczb
+  freq_terms(text, stopwords = Top200Words)  # Analiza częstości
 }
-clean_text_2021 <- tidy_text(text_2021)
-clean_text_2024 <- tidy_text(text_2024)
-dtm_2021 <- TermDocumentMatrix(clean_text_2021)
-dtm_2024 <- TermDocumentMatrix(clean_text_2024)
-matrix_2021 <- as.matrix(dtm_2021)
-matrix_2024 <- as.matrix(dtm_2024)
-word_freq_2021 <- sort(rowSums(matrix_2021), decreasing = TRUE)
-word_freq_2024 <- sort(rowSums(matrix_2024), decreasing = TRUE)
-freq_terms_2021 <- data.frame(WORD = names(word_freq_2021), FREQ = word_freq_2021)
-freq_terms_2024 <- data.frame(WORD = names(word_freq_2024), FREQ = word_freq_2024)
-wordcloud(freq_terms_2021$WORD, freq_terms_2021$FREQ, min.freq = 4, colors = brewer.pal(8, "Blues"))
-wordcloud(freq_terms_2024$WORD, freq_terms_2024$FREQ, min.freq = 4, colors = brewer.pal(8, "Reds"))
-plot_bar <- function(freq_terms, year) {
-  top_terms <- head(freq_terms, 10)
-  ggplot(top_terms, aes(x = reorder(WORD, -FREQ), y = FREQ)) +
-    geom_bar(stat = "identity", fill = "steelblue") +
-    theme_minimal() +
-    labs(title = paste("Najczęstsze słowa w przemówieniu", year), x = "Słowo", y = "Częstość") +
-    coord_flip()
-}
-plot_bar(freq_terms_2021, "2021")
-plot_bar(freq_terms_2024, "2024")
+czestosci_2021 <- przetworz_tekst(przemowienie_2021)
+czestosci_2024 <- przetworz_tekst(przemowienie_2024)
+par(mfrow = c(1, 2))  # Dwa wykresy obok siebie
+plot(czestosci_2021, title = "2021 - Najczęstsze słowa")
+plot(czestosci_2024, title = "2024 - Najczęstsze słowa")
+par(mfrow = c(1, 2))
+wordcloud(
+  czestosci_2021$WORD, czestosci_2021$FREQ,
+  min.freq = 2, max.words = 50,
+  colors = brewer.pal(9, "Blues"), 
+  main = "2021"
+))
+wordcloud(
+  czestosci_2024$WORD, czestosci_2024$FREQ,
+  min.freq = 2, max.words = 50,
+  colors = brewer.pal(9, "Reds"), 
+  main = "2024"
+))
+top_2021 <- head(czestosci_2021, 10)
+top_2024 <- head(czestosci_2024, 10)
+cat("Wspólne kluczowe słowa:\n")
+print(intersect(top_2021$WORD, top_2024$WORD))
+cat("\nUnikalne dla 2021:\n")
+print(setdiff(top_2021$WORD, top_2024$WORD))
+cat("\nUnikalne dla 2024:\n")
+print(setdiff(top_2024$WORD, top_2021$WORD))
+par(mfrow = c(1, 1))
